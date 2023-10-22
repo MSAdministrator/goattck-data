@@ -1,0 +1,34 @@
+package goattckdata
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestEnterprise_New(t *testing.T) {
+	enterprise, err := New(attackURL)
+	if err != nil {
+		t.Errorf("Error, could not load Enterprise: %v", err)
+	}
+	assert.IsType(t, Enterprise{}, enterprise)
+	assert.Greater(t, len(enterprise.Actors), 20)
+	assert.Greater(t, len(enterprise.Campaigns), 5)
+	assert.Greater(t, len(enterprise.DataComponents), 5)
+	assert.Greater(t, len(enterprise.DataSources), 5)
+	assert.Equal(t, len(enterprise.Defintions), 1)
+	assert.Greater(t, len(enterprise.Malwares), 20)
+	assert.Equal(t, len(enterprise.Matrices), 1)
+	assert.Greater(t, len(enterprise.Mitigations), 5)
+	assert.Greater(t, len(enterprise.Relationships), 5)
+	assert.Equal(t, len(enterprise.Tactics), 14)
+	assert.Greater(t, len(enterprise.Techniques), 200)
+	assert.Greater(t, len(enterprise.Tools), 20)
+
+	assert.NotNil(t, enterprise.rawData)
+
+	fakeURL := "hxxps://test.test.test/enterprise-legacy/enterprise-legacy.json"
+	e, err := New(fakeURL)
+	assert.Equal(t, Enterprise{jsonURL: fakeURL}, e)
+	assert.Error(t, err)
+}
