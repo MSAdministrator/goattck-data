@@ -1,10 +1,8 @@
 package goattckdata
 
 import (
-	"github.com/msadministrator/goattck/internal/logger"
+	"github.com/msadministrator/goattckdata/internal/logger"
 )
-
-const attackURL = "https://raw.githubusercontent.com/mitre/cti/master/enterprise-attack/enterprise-attack.json"
 
 type DownloadURL string
 
@@ -14,9 +12,7 @@ var (
 
 // Creates and loads the Enterprise MITRE ATT&CK framework into defined models
 func NewEnterprise(url DownloadURL) (Enterprise, error) {
-
-	enterprise := &Enterprise{}
-	err := enterprise.Download(url)
+	enterprise, err := New(string(url))
 	if err != nil {
 		slogger.Fatal("Error, could not load Enterprise")
 	}
@@ -24,6 +20,6 @@ func NewEnterprise(url DownloadURL) (Enterprise, error) {
 	if err != nil {
 		slogger.Error("Error, could not load Enterprise data models")
 	}
-	EnterpriseAttck = *enterprise
-	return *enterprise, nil
+	//EnterpriseAttck = *enterprise
+	return enterprise, nil
 }
