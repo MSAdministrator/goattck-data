@@ -9,10 +9,6 @@ import (
 	"github.com/msadministrator/goattckdata/internal/models"
 )
 
-var (
-	EnterpriseAttck Enterprise
-)
-
 // The raw representation of a custom data model used by both pyattck & goattck
 type rawEnterpriseAttck struct {
 	// The type of framework
@@ -25,10 +21,13 @@ type rawEnterpriseAttck struct {
 	SpecVersion string `json:"spec_version"`
 	// The last time the data was updated/modified.
 	LastUpdated string `json:"last_updated"`
+	// Whether or not this is a revoked version of the framework
+	Revoked bool `json:"revoked"`
 }
 
 // Enterprise struct represents the MITRE ATT&CK Enterprise framework
 type Enterprise struct {
+	jsonURL        string
 	Actors         []models.ActorObject
 	Campaigns      []models.CampaignObject
 	Controls       []models.ControlObject
@@ -42,31 +41,48 @@ type Enterprise struct {
 	Tactics        []models.TacticObject
 	Techniques     []models.TechniqueObject
 	Tools          []models.ToolObject
-	rawData        *rawEnterpriseAttck
+	rawData        rawEnterpriseAttck
 }
 
-// Fetch MITRE ATT&CK data and unmarshal into rawEnterpriseAttck struct
-func (e *Enterprise) Download(url DownloadURL) error {
-	slogger.Info("Fetching MITRE ATT&CK...")
-	resp, err := http.Get(string(url))
+func New(jsonURL string) (Enterprise, error) {
+	var err error
+	e := Enterprise{
+		jsonURL: jsonURL,
+	}
+	e.rawData, err = e.download()
 	if err != nil {
-		slogger.Warning("Unable to fetch data from URL.")
-		return err
+		slogger.Error(fmt.Sprintf("Error downloading data: %s", err))
+		return e, err
+	}
+	err = e.loadDataModels()
+	if err != nil {
+		slogger.Error(fmt.Sprintf("Error loading data models: %s", err))
+		return e, err
+	}
+	return e, err
+}
+
+func (e *Enterprise) download() (rawEnterpriseAttck, error) {
+	eAttck := rawEnterpriseAttck{}
+
+	resp, err := http.Get(e.jsonURL)
+	if err != nil {
+		slogger.Fatal("Unable to fetch data from URL.")
+		return eAttck, err
 	}
 	defer resp.Body.Close()
 	body, readErr := io.ReadAll(resp.Body)
 	if readErr != nil {
 		slogger.Fatal(fmt.Sprintf("Error reading response body: %s", readErr))
-		return readErr
+		return eAttck, readErr
 	}
 	bytesData := []byte(body)
 	if err != nil {
 		slogger.Error("Error, could not fetch data")
 	}
-	eAttck := rawEnterpriseAttck{}
+
 	json.Unmarshal(bytesData, &eAttck)
-	e.rawData = &eAttck
-	return nil
+	return eAttck, nil
 }
 
 // Load data models from rawEnterpriseAttck struct
