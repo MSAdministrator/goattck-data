@@ -20,9 +20,9 @@ type TechniqueObject struct {
 	BaseModel
 	BaseAttributes
 	// These are properties from the MITRE ATT&CK json
-	XMitrePlatforms    []string `json:"x_mitre_platforms"`
+	XMitrePlatforms    []string            `json:"x_mitre_platforms"`
 	ExternalReferences []ExternalReference `json:"external_references"`
-	KillChainPhases []struct {
+	KillChainPhases    []struct {
 		KillChainName string `json:"kill_chain_name"`
 		PhaseName     string `json:"phase_name"`
 	} `json:"kill_chain_phases"`
@@ -44,13 +44,13 @@ type TechniqueObject struct {
 
 type techniqueExternalAttributes struct {
 	// These are properties external from the MITRE ATT&CK json definitions
-	CommandList []string `json:"command_list"`
-	Commands []string `json:"commands"`
-	Queries []string `json:"queries"`
-	ParsedDatasets []string `json:"parsed_datasets"`
-	PossibleDetections []string`json:"possible_detections"`
-	ExternalReference []string `json:"external_reference"`
-	Controls []string `json:"controls"`
+	CommandList        []string `json:"command_list"`
+	Commands           []string `json:"commands"`
+	Queries            []string `json:"queries"`
+	ParsedDatasets     []string `json:"parsed_datasets"`
+	PossibleDetections []string `json:"possible_detections"`
+	ExternalReference  []string `json:"external_reference"`
+	Controls           []string `json:"controls"`
 }
 
 func parseTechniqueExternalAttributes(object map[string]interface{}) (techniqueExternalAttributes, error) {
@@ -61,18 +61,29 @@ func parseTechniqueExternalAttributes(object map[string]interface{}) (techniqueE
 	if object["commands"] != nil {
 		techniqueExternalAttributes.Commands = ConvertInterfaceArrayToStringArray(object["commands"].([]interface{}))
 	}
-	if object["queries"] != nil {
-		techniqueExternalAttributes.Queries = ConvertInterfaceArrayToStringArray(object["queries"].([]interface{}))
-	}
-	if object["parsed_datasets"] != nil {
-		techniqueExternalAttributes.ParsedDatasets = ConvertInterfaceArrayToStringArray(object["parsed_datasets"].([]interface{}))
-	}
-	if object["possible_detections"] != nil {
-		techniqueExternalAttributes.PossibleDetections = ConvertInterfaceArrayToStringArray(object["possible_detections"].([]interface{}))
-	}
-	if object["external_reference"] != nil {
-		techniqueExternalAttributes.ExternalReference = ConvertInterfaceArrayToStringArray(object["external_reference"].([]interface{}))
-	}
+	// if object["queries"] != nil {
+	// 	techniqueExternalAttributes.Queries = ConvertInterfaceArrayToStringArray(object["queries"].([]interface{}))
+	// }
+	// if object["parsed_datasets"] != nil {
+	// 	if _, ok := object["parsed_datasets"].([]interface{}); ok {
+	// 		techniqueExternalAttributes.ParsedDatasets = ConvertInterfaceArrayToStringArray(object["parsed_datasets"].([]interface{}))
+	// 	} else {
+	// 		fmt.Printf("parsed_datasets is not an array: %T\n", object["parsed_datasets"])
+	// 		//techniqueExternalAttributes.ParsedDatasets = ConvertInterfaceArrayToStringArray(object["parsed_datasets"].(map[string]interface{}))
+	// 	}
+	// }
+	// if object["possible_detections"] != nil {
+	// 	if _, ok := object["possible_detections"].([]interface{}); ok {
+	// 		techniqueExternalAttributes.PossibleDetections = ConvertInterfaceArrayToStringArray(object["possible_detections"].([]interface{}))
+	// 	} else {
+	// 		fmt.Printf("possible_detections is not an array: %T\n", object["possible_detections"])
+	// 		//techniqueExternalAttributes.PossibleDetections = ConvertInterfaceArrayToStringArray(object["possible_detections"].(map[string]interface{}))
+	// 	}
+	// 	techniqueExternalAttributes.PossibleDetections = ConvertInterfaceArrayToStringArray(object["possible_detections"].([]interface{}))
+	// }
+	// if object["external_reference"] != nil {
+	// 	techniqueExternalAttributes.ExternalReference = ConvertInterfaceArrayToStringArray(object["external_reference"].([]interface{}))
+	// }
 	if object["controls"] != nil {
 		techniqueExternalAttributes.Controls = ConvertInterfaceArrayToStringArray(object["controls"].([]interface{}))
 	}
