@@ -32,3 +32,11 @@ func TestEnterprise_New(t *testing.T) {
 	assert.Equal(t, Enterprise{jsonURL: fakeURL}, e)
 	assert.Error(t, err)
 }
+
+func TestEnterprise_buildRelationshipMap(t *testing.T) {
+	enterprise, err := New(attackURL)
+	if err != nil {
+		t.Errorf("Error, could not load Enterprise: %v", err)
+	}
+	assert.Greater(t, len(enterprise.attackRelationshipMap["x-mitre-data-component--c0a4a086-cc20-4e1e-b7cb-29d99dfa3fb1"]), 25)
+}

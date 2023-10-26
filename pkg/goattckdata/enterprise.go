@@ -27,21 +27,22 @@ type rawEnterpriseAttck struct {
 
 // Enterprise struct represents the MITRE ATT&CK Enterprise framework
 type Enterprise struct {
-	jsonURL        string
-	Actors         []models.ActorObject
-	Campaigns      []models.CampaignObject
-	Controls       []models.ControlObject
-	DataComponents []models.DataComponentObject
-	DataSources    []models.DataSourceObject
-	Defintions     []models.MarkingDefinitionObject
-	Malwares       []models.MalwareObject
-	Matrices       []models.MatrixObject
-	Mitigations    []models.MitigationObject
-	Relationships  []models.RelationshipObject
-	Tactics        []models.TacticObject
-	Techniques     []models.TechniqueObject
-	Tools          []models.ToolObject
-	rawData        rawEnterpriseAttck
+	jsonURL               string
+	Actors                []models.ActorObject
+	Campaigns             []models.CampaignObject
+	Controls              []models.ControlObject
+	DataComponents        []models.DataComponentObject
+	DataSources           []models.DataSourceObject
+	Defintions            []models.MarkingDefinitionObject
+	Malwares              []models.MalwareObject
+	Matrices              []models.MatrixObject
+	Mitigations           []models.MitigationObject
+	Relationships         []models.RelationshipObject
+	Tactics               []models.TacticObject
+	Techniques            []models.TechniqueObject
+	Tools                 []models.ToolObject
+	rawData               rawEnterpriseAttck
+	attackRelationshipMap map[string][]string
 }
 
 func New(jsonURL string) (Enterprise, error) {
@@ -59,9 +60,11 @@ func New(jsonURL string) (Enterprise, error) {
 		slogger.Error(fmt.Sprintf("Error loading data models: %s", err))
 		return e, err
 	}
+	e.attackRelationshipMap = e.buildRelationshipMap()
 	return e, err
 }
 
+// Download the raw data from the jsonURL
 func (e *Enterprise) download() (rawEnterpriseAttck, error) {
 	eAttck := rawEnterpriseAttck{}
 
@@ -92,75 +95,91 @@ func (e *Enterprise) loadDataModels() error {
 		if !ok {
 			slogger.Error("error casting value to map")
 		}
+		jsonString, err := json.Marshal(v)
+		if err != nil {
+			slogger.Error(fmt.Sprintf("Error marshalling json: %s", err))
+		}
 		switch v["type"] {
 		case "intrusion-set":
-			actor, err := models.NewActor(v)
+			actor := models.ActorObject{}
+			err := json.Unmarshal(jsonString, &actor)
 			if err != nil {
 				slogger.Error(fmt.Sprintf("Error creating actor: %s", err))
 			}
 			e.Actors = append(e.Actors, actor)
 		case "campaign":
-			campaign, err := models.NewCampaign(v)
+			campaign := models.CampaignObject{}
+			err := json.Unmarshal(jsonString, &campaign)
 			if err != nil {
 				slogger.Error(fmt.Sprintf("Error creating campaign: %s", err))
 			}
 			e.Campaigns = append(e.Campaigns, campaign)
 		case "x-mitre-data-component":
-			dataComponent, err := models.NewDataComponent(v)
+			dataComponent := models.DataComponentObject{}
+			err := json.Unmarshal(jsonString, &dataComponent)
 			if err != nil {
 				slogger.Error(fmt.Sprintf("Error creating data component: %s", err))
 			}
 			e.DataComponents = append(e.DataComponents, dataComponent)
 		case "x-mitre-data-source":
-			dataSource, err := models.NewDataSource(v)
+			dataSource := models.DataSourceObject{}
+			err := json.Unmarshal(jsonString, &dataSource)
 			if err != nil {
 				slogger.Error(fmt.Sprintf("Error creating data source: %s", err))
 			}
 			e.DataSources = append(e.DataSources, dataSource)
 		case "marking-definition":
-			markingDefinition, err := models.NewMarkingDefinition(v)
+			markingDefinition := models.MarkingDefinitionObject{}
+			err := json.Unmarshal(jsonString, &markingDefinition)
 			if err != nil {
 				slogger.Error(fmt.Sprintf("Error creating marking definition: %s", err))
 			}
 			e.Defintions = append(e.Defintions, markingDefinition)
 		case "malware":
-			malware, err := models.NewMalware(v)
+			malware := models.MalwareObject{}
+			err := json.Unmarshal(jsonString, &malware)
 			if err != nil {
 				slogger.Error(fmt.Sprintf("Error creating malware: %s", err))
 			}
 			e.Malwares = append(e.Malwares, malware)
 		case "course-of-action":
-			mitigation, err := models.NewMitigation(v)
+			mitigation := models.MitigationObject{}
+			err := json.Unmarshal(jsonString, &mitigation)
 			if err != nil {
 				slogger.Error(fmt.Sprintf("Error creating mitigation: %s", err))
 			}
 			e.Mitigations = append(e.Mitigations, mitigation)
 		case "x-mitre-matrix":
-			matrix, err := models.NewMatrix(v)
+			matrix := models.MatrixObject{}
+			err := json.Unmarshal(jsonString, &matrix)
 			if err != nil {
 				slogger.Error(fmt.Sprintf("Error creating matrix: %s", err))
 			}
 			e.Matrices = append(e.Matrices, matrix)
 		case "relationship":
-			relationship, err := models.NewRelationship(v)
+			relationship := models.RelationshipObject{}
+			err := json.Unmarshal(jsonString, &relationship)
 			if err != nil {
 				slogger.Error(fmt.Sprintf("Error creating relationship: %s", err))
 			}
 			e.Relationships = append(e.Relationships, relationship)
 		case "x-mitre-tactic":
-			tactic, err := models.NewTactic(v)
+			tactic := models.TacticObject{}
+			err := json.Unmarshal(jsonString, &tactic)
 			if err != nil {
 				slogger.Error(fmt.Sprintf("Error creating tactic: %s", err))
 			}
 			e.Tactics = append(e.Tactics, tactic)
 		case "attack-pattern":
-			technique, err := models.NewTechnique(v)
+			technique := models.TechniqueObject{}
+			err := json.Unmarshal(jsonString, &technique)
 			if err != nil {
 				slogger.Error(fmt.Sprintf("Error creating technique: %s", err))
 			}
 			e.Techniques = append(e.Techniques, technique)
 		case "tool":
-			tool, err := models.NewTool(v)
+			tool := models.ToolObject{}
+			err := json.Unmarshal(jsonString, &tool)
 			if err != nil {
 				slogger.Error(fmt.Sprintf("Error creating tool: %s", err))
 			}
@@ -168,4 +187,40 @@ func (e *Enterprise) loadDataModels() error {
 		}
 	}
 	return nil
+}
+
+// buildRelationshipMap builds a map of relationships between ATT&CK objects
+func (e *Enterprise) buildRelationshipMap() (relationshipMap map[string][]string) {
+	relationshipMap = make(map[string][]string)
+	for _, relationship := range e.Relationships {
+		if relationship.RelationshipType != "revoked-by" {
+			sourceID := relationship.SourceRef
+			targetID := relationship.TargetRef
+			if _, ok := relationshipMap[sourceID]; !ok {
+				relationshipMap[sourceID] = []string{}
+			}
+			if _, ok := relationshipMap[targetID]; !ok {
+				relationshipMap[targetID] = []string{}
+			}
+			found := false
+			for _, val := range relationshipMap[sourceID] {
+				if val == targetID {
+					found = true
+				}
+			}
+			if !found {
+				relationshipMap[sourceID] = append(relationshipMap[sourceID], targetID)
+			}
+			found = false
+			for _, val := range relationshipMap[targetID] {
+				if val == sourceID {
+					found = true
+				}
+			}
+			if !found {
+				relationshipMap[targetID] = append(relationshipMap[targetID], sourceID)
+			}
+		}
+	}
+	return relationshipMap
 }

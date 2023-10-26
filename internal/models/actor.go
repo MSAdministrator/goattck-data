@@ -10,6 +10,7 @@ type Actor interface {
 	Techniques() ([]Technique, error)
 }
 
+// ActorObject is a representation of the MITRE ATT&CK Actor json model
 type ActorObject struct {
 	BaseModel
 	BaseAttributes
@@ -21,6 +22,7 @@ type ActorObject struct {
 	MitreAttckId string `json:"mitre_attck_id"`
 }
 
+// actorExternalAttributes are properties external from the MITRE ATT&CK json definitions
 type actorExternalAttributes struct {
 	Names               []string `json:"names"`
 	ExternalTools       []string `json:"external_tools"`
@@ -34,6 +36,7 @@ type actorExternalAttributes struct {
 	Comments            []string `json:"comments"`
 }
 
+// NewActor is a function that takes in a map of data and returns a ActorObject
 func NewActor(object map[string]interface{}) (ActorObject, error) {
 	actor := ActorObject{}
 	jsonString, _ := json.Marshal(object)
@@ -41,14 +44,14 @@ func NewActor(object map[string]interface{}) (ActorObject, error) {
 	return actor, nil
 }
 
-func (a *ActorObject) Malwares() ([]Malware, error) {
+func (a ActorObject) Malwares() ([]Malware, error) {
 	return nil, nil
 }
 
-func (a *ActorObject) Tools() ([]Tool, error) {
+func (a ActorObject) Tools() ([]Tool, error) {
 	return nil, nil
 }
 
-func (a *ActorObject) Techniques() ([]Technique, error) {
+func (a ActorObject) Techniques() ([]Technique, error) {
 	return nil, nil
 }
