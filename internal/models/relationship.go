@@ -20,9 +20,9 @@ type RelationshipObject struct {
 	XMitreModifiedByRef     string              `json:"x_mitre_modified_by_ref"`
 }
 
-func NewRelationship(object map[string]interface{}) (RelationshipObject, error) {
+func NewRelationship(object map[string]interface{}) (*RelationshipObject, error) {
 	relationship := RelationshipObject{}
 	jsonString, _ := json.Marshal(object)
 	json.Unmarshal(jsonString, &relationship)
-	return relationship, nil
+	return &relationship, nil
 }

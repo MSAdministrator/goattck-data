@@ -20,6 +20,9 @@ type ActorObject struct {
 	// These are properties unique to pyattck-data
 	actorExternalAttributes
 	MitreAttckId string `json:"mitre_attck_id"`
+	malwares     []*MalwareObject
+	tools        []*ToolObject
+	techniques   []*TechniqueObject
 }
 
 // actorExternalAttributes are properties external from the MITRE ATT&CK json definitions
@@ -37,21 +40,54 @@ type actorExternalAttributes struct {
 }
 
 // NewActor is a function that takes in a map of data and returns a ActorObject
-func NewActor(object map[string]interface{}) (ActorObject, error) {
+func NewActor(object map[string]interface{}) (*ActorObject, error) {
 	actor := ActorObject{}
 	jsonString, _ := json.Marshal(object)
 	json.Unmarshal(jsonString, &actor)
-	return actor, nil
+	return &actor, nil
 }
 
-func (a ActorObject) Malwares() ([]Malware, error) {
-	return nil, nil
+func (a *ActorObject) SetRelationships(enterprise *Enterprise) error {
+	if enterprise.attackRelationshipMap[a.Id] != nil {
+		var malwares []*MalwareObject
+		for _, malwareId := range enterprise.attackRelationshipMap[a.Id] {
+			for _, malware := range enterprise.Malwares {
+				if malware.Id == malwareId {
+					malwares = append(malwares, malware)
+				}
+			}
+		}
+		a.malwares = malwares
+		var tools []*ToolObject
+		for _, toolId := range enterprise.attackRelationshipMap[a.Id] {
+			for _, tool := range enterprise.Tools {
+				if tool.Id == toolId {
+					tools = append(tools, tool)
+				}
+			}
+		}
+		a.tools = tools
+		var techniques []*TechniqueObject
+		for _, techniqueId := range enterprise.attackRelationshipMap[a.Id] {
+			for _, technique := range enterprise.Techniques {
+				if technique.Id == techniqueId {
+					techniques = append(techniques, technique)
+				}
+			}
+		}
+		a.techniques = techniques
+	}
+	return nil
 }
 
-func (a ActorObject) Tools() ([]Tool, error) {
-	return nil, nil
+func (a ActorObject) Malwares() []*MalwareObject {
+	return a.malwares
 }
 
-func (a ActorObject) Techniques() ([]Technique, error) {
-	return nil, nil
+func (a ActorObject) Tools() []*ToolObject {
+	return a.tools
+}
+
+func (a ActorObject) Techniques() []*TechniqueObject {
+	return a.techniques
 }

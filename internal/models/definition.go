@@ -16,9 +16,9 @@ type MarkingDefinitionObject struct {
 	XMitreAttackSpecVersion string `json:"x_mitre_attack_spec_version"`
 }
 
-func NewMarkingDefinition(object map[string]interface{}) (MarkingDefinitionObject, error) {
+func NewMarkingDefinition(object map[string]interface{}) (*MarkingDefinitionObject, error) {
 	definition := MarkingDefinitionObject{}
 	jsonString, _ := json.Marshal(object)
 	json.Unmarshal(jsonString, &definition)
-	return definition, nil
+	return &definition, nil
 }

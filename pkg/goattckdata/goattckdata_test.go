@@ -5,7 +5,7 @@ import "testing"
 const attackURL = "https://raw.githubusercontent.com/swimlane/pyattck-data/main/data_collector/generated_attck_data_v3.json"
 
 func TestNewEnterprise(t *testing.T) {
-	enterprise, err := NewEnterprise(attackURL)
+	enterprise, err := NewAttck(attackURL)
 	if err != nil {
 		t.Errorf("Error, could not load Enterprise: %v", err)
 	}

@@ -38,6 +38,15 @@ type TechniqueObject struct {
 	XMitreEffectivePermissions []string `json:"x_mitre_effective_permissions,omitempty"`
 	XMitreNetworkRequirements  bool     `json:"x_mitre_network_requirements,omitempty"`
 	techniqueExternalAttributes
+	actors         []*ActorObject
+	campaigns      []*CampaignObject
+	dataComponents []*DataComponentObject
+	dataSources    []*DataSourceObject
+	malwares       []*MalwareObject
+	mitigations    []*MitigationObject
+	tactics        []*TacticObject
+	techniques     []*TechniqueObject
+	tools          []*ToolObject
 }
 
 type techniqueExternalAttributes struct {
@@ -52,45 +61,129 @@ type techniqueExternalAttributes struct {
 	TechniqueId        string   `json:"technique_id"`
 }
 
-func NewTechnique(object map[string]interface{}) (TechniqueObject, error) {
+func NewTechnique(object map[string]interface{}) (*TechniqueObject, error) {
 	technique := TechniqueObject{}
 	jsonString, _ := json.Marshal(object)
 	json.Unmarshal(jsonString, &technique)
-	return technique, nil
+	return &technique, nil
 }
 
-func (t TechniqueObject) Actors() ([]Actor, error) {
-	return nil, nil
+func (a *TechniqueObject) SetRelationships(enterprise *Enterprise) error {
+	if enterprise.attackRelationshipMap[a.Id] != nil {
+		var actors []*ActorObject
+		for _, actorId := range enterprise.attackRelationshipMap[a.Id] {
+			for _, actor := range enterprise.Actors {
+				if actor.Id == actorId {
+					actors = append(actors, actor)
+				}
+			}
+		}
+		a.actors = actors
+		var campaigns []*CampaignObject
+		for _, campaignId := range enterprise.attackRelationshipMap[a.Id] {
+			for _, campaign := range enterprise.Campaigns {
+				if campaign.Id == campaignId {
+					campaigns = append(campaigns, campaign)
+				}
+			}
+		}
+		a.campaigns = campaigns
+
+		var dataComponents []*DataComponentObject
+		for _, dataComponentId := range enterprise.attackRelationshipMap[a.Id] {
+			for _, dataComponent := range enterprise.DataComponents {
+				if dataComponent.Id == dataComponentId {
+					dataComponents = append(dataComponents, dataComponent)
+				}
+			}
+		}
+		a.dataComponents = dataComponents
+
+		var dataSources []*DataSourceObject
+		for _, dataSourceId := range enterprise.attackRelationshipMap[a.Id] {
+			for _, dataSource := range enterprise.DataSources {
+				if dataSource.Id == dataSourceId {
+					dataSources = append(dataSources, dataSource)
+				}
+			}
+		}
+		a.dataSources = dataSources
+
+		var malwares []*MalwareObject
+		for _, malwareId := range enterprise.attackRelationshipMap[a.Id] {
+			for _, malware := range enterprise.Malwares {
+				if malware.Id == malwareId {
+					malwares = append(malwares, malware)
+				}
+			}
+		}
+		a.malwares = malwares
+
+		var tactics []*TacticObject
+		for _, phase := range a.KillChainPhases {
+			for _, tactic := range enterprise.Tactics {
+				if tactic.XMitreShortname == phase.KillChainName {
+					tactics = append(tactics, tactic)
+				}
+			}
+		}
+		a.tactics = tactics
+
+		var techniques []*TechniqueObject
+		for _, techniqueId := range enterprise.attackRelationshipMap[a.Id] {
+			for _, technique := range enterprise.Techniques {
+				if technique.Id == techniqueId {
+					techniques = append(techniques, technique)
+				}
+			}
+		}
+		a.techniques = techniques
+
+		var tools []*ToolObject
+		for _, toolId := range enterprise.attackRelationshipMap[a.Id] {
+			for _, tool := range enterprise.Tools {
+				if tool.Id == toolId {
+					tools = append(tools, tool)
+				}
+			}
+		}
+		a.tools = tools
+	}
+	return nil
 }
 
-func (t TechniqueObject) Campaigns() ([]Campaign, error) {
-	return nil, nil
+func (t TechniqueObject) Actors() []*ActorObject {
+	return t.actors
 }
 
-func (t TechniqueObject) DataComponents() ([]DataComponent, error) {
-	return nil, nil
+func (t TechniqueObject) Campaigns() []*CampaignObject {
+	return t.campaigns
 }
 
-func (t TechniqueObject) DataSources() ([]DataSource, error) {
-	return nil, nil
+func (t TechniqueObject) DataComponents() []*DataComponentObject {
+	return t.dataComponents
 }
 
-func (t TechniqueObject) Malwares() ([]Malware, error) {
-	return nil, nil
+func (t TechniqueObject) DataSources() []*DataSourceObject {
+	return t.dataSources
 }
 
-func (t TechniqueObject) Mitigations() ([]Mitigation, error) {
-	return nil, nil
+func (t TechniqueObject) Malwares() []*MalwareObject {
+	return t.malwares
 }
 
-func (t TechniqueObject) Tactics() ([]Tactic, error) {
-	return nil, nil
+func (t TechniqueObject) Mitigations() []*MitigationObject {
+	return t.mitigations
 }
 
-func (t TechniqueObject) Techniques() ([]Technique, error) {
-	return nil, nil
+func (t TechniqueObject) Tactics() []*TacticObject {
+	return t.tactics
 }
 
-func (t TechniqueObject) Tools() ([]Tool, error) {
-	return nil, nil
+func (t TechniqueObject) Techniques() []*TechniqueObject {
+	return t.techniques
+}
+
+func (t TechniqueObject) Tools() []*ToolObject {
+	return t.tools
 }

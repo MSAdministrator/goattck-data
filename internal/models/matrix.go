@@ -21,9 +21,9 @@ type MatrixObject struct {
 	XMitreAttackSpecVersion string              `json:"x_mitre_attack_spec_version"`
 }
 
-func NewMatrix(object map[string]interface{}) (MatrixObject, error) {
+func NewMatrix(object map[string]interface{}) (*MatrixObject, error) {
 	matrix := MatrixObject{}
 	jsonString, _ := json.Marshal(object)
 	json.Unmarshal(jsonString, &matrix)
-	return matrix, nil
+	return &matrix, nil
 }

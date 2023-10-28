@@ -2,6 +2,7 @@ package goattckdata
 
 import (
 	"github.com/msadministrator/goattckdata/internal/logger"
+	"github.com/msadministrator/goattckdata/internal/models"
 )
 
 type DownloadURL string
@@ -11,15 +12,10 @@ var (
 )
 
 // Creates and loads the Enterprise MITRE ATT&CK framework into defined models
-func NewEnterprise(url DownloadURL) (Enterprise, error) {
-	enterprise, err := New(string(url))
+func NewAttck(url DownloadURL) (models.Enterprise, error) {
+	enterprise, err := models.NewEnterprise(string(url))
 	if err != nil {
 		slogger.Fatal("Error, could not load Enterprise")
 	}
-	err = enterprise.loadDataModels()
-	if err != nil {
-		slogger.Error("Error, could not load Enterprise data models")
-	}
-	//EnterpriseAttck = *enterprise
 	return enterprise, nil
 }

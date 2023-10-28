@@ -1,4 +1,4 @@
-package goattckdata
+package models
 
 import (
 	"testing"
@@ -6,8 +6,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const attackURL = "https://raw.githubusercontent.com/swimlane/pyattck-data/main/data_collector/generated_attck_data_v3.json"
+
 func TestEnterprise_New(t *testing.T) {
-	enterprise, err := New(attackURL)
+	enterprise, err := NewEnterprise(attackURL)
 	if err != nil {
 		t.Errorf("Error, could not load Enterprise: %v", err)
 	}
@@ -28,13 +30,13 @@ func TestEnterprise_New(t *testing.T) {
 	assert.NotNil(t, enterprise.rawData)
 
 	fakeURL := "hxxps://test.test.test/enterprise-legacy/enterprise-legacy.json"
-	e, err := New(fakeURL)
-	assert.Equal(t, Enterprise{jsonURL: fakeURL}, e)
+	e, err := NewEnterprise(fakeURL)
+	assert.Equal(t, Enterprise{}, e)
 	assert.Error(t, err)
 }
 
 func TestEnterprise_buildRelationshipMap(t *testing.T) {
-	enterprise, err := New(attackURL)
+	enterprise, err := NewEnterprise(attackURL)
 	if err != nil {
 		t.Errorf("Error, could not load Enterprise: %v", err)
 	}

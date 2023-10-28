@@ -21,23 +21,61 @@ type CampaignObject struct {
 	XMitreFirstSeenCitation string    `json:"x_mitre_first_seen_citation"`
 	XMitreLastSeenCitation  string    `json:"x_mitre_last_seen_citation"`
 	XMitreContributors      []string  `json:"x_mitre_contributors,omitempty"`
+	malwares                []*MalwareObject
+	techniques              []*TechniqueObject
+	tools                   []*ToolObject
 }
 
-func NewCampaign(object map[string]interface{}) (CampaignObject, error) {
+func NewCampaign(object map[string]interface{}) (*CampaignObject, error) {
 	campaign := CampaignObject{}
 	jsonString, _ := json.Marshal(object)
 	json.Unmarshal(jsonString, &campaign)
-	return campaign, nil
+	return &campaign, nil
 }
 
-func (c CampaignObject) Malwares() ([]Malware, error) {
-	return nil, nil
+func (a *CampaignObject) SetRelationships(enterprise *Enterprise) error {
+	if enterprise.attackRelationshipMap[a.Id] != nil {
+		var malwares []*MalwareObject
+		for _, malwareId := range enterprise.attackRelationshipMap[a.Id] {
+			for _, malware := range enterprise.Malwares {
+				if malware.Id == malwareId {
+					malwares = append(malwares, malware)
+				}
+			}
+		}
+		a.malwares = malwares
+
+		var techniques []*TechniqueObject
+		for _, techniqueId := range enterprise.attackRelationshipMap[a.Id] {
+			for _, technique := range enterprise.Techniques {
+				if technique.Id == techniqueId {
+					techniques = append(techniques, technique)
+				}
+			}
+		}
+		a.techniques = techniques
+
+		var tools []*ToolObject
+		for _, toolId := range enterprise.attackRelationshipMap[a.Id] {
+			for _, tool := range enterprise.Tools {
+				if tool.Id == toolId {
+					tools = append(tools, tool)
+				}
+			}
+		}
+		a.tools = tools
+	}
+	return nil
 }
 
-func (c CampaignObject) Tools() ([]Tool, error) {
-	return nil, nil
+func (c CampaignObject) Malwares() []*MalwareObject {
+	return c.malwares
 }
 
-func (c CampaignObject) Techniques() ([]Technique, error) {
-	return nil, nil
+func (c CampaignObject) Techniques() []*TechniqueObject {
+	return c.techniques
+}
+
+func (c CampaignObject) Tools() []*ToolObject {
+	return c.tools
 }
