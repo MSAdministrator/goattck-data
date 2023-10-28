@@ -1,10 +1,8 @@
 package models
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"reflect"
 )
 
@@ -51,15 +49,4 @@ func IsStructEmpty(object interface{}) (bool, error) {
 		}
 	}
 	return false, nil
-}
-
-// Loads or retrieves data from local file disk
-func loadJSON() (rawEnterpriseAttck, error) {
-	data, err := os.ReadFile("./data/generated_attck_data_v3.json")
-	if err != nil {
-		return rawEnterpriseAttck{}, errorLoadingJSON
-	}
-	eAttck := rawEnterpriseAttck{}
-	json.Unmarshal([]byte(data), &eAttck)
-	return eAttck, nil
 }

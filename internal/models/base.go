@@ -60,7 +60,6 @@ func parseBaseAttributes(object map[string]interface{}) (BaseAttributes, error) 
 }
 
 func parseExternalReference(object map[string]interface{}) (ExternalReference, error) {
-	fmt.Printf("%s/n", object)
 	externalReference := ExternalReference{}
 	if object["source_name"] != nil {
 		externalReference.SourceName = object["source_name"].(string)

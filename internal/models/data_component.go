@@ -1,7 +1,7 @@
 package models
 
 import (
-	"fmt"
+	"encoding/json"
 )
 
 type DataComponent interface {
@@ -16,35 +16,31 @@ type DataComponentObject struct {
 	Type                    string `json:"type"`
 	XMitreAttackSpecVersion string `json:"x_mitre_attack_spec_version"`
 	XMitreModifiedByRef     string `json:"x_mitre_modified_by_ref"`
+	techniques              []*TechniqueObject
 }
 
-func NewDataComponent(object map[string]interface{}) (DataComponentObject, error) {
+func NewDataComponent(object map[string]interface{}) (*DataComponentObject, error) {
 	dataComponent := DataComponentObject{}
-	baseModel, err := parseBaseModel(object)
-	if err != nil {
-		slogger.Error(fmt.Sprintf("Error parsing base model: %s", err))
-	}
-	dataComponent.BaseModel = baseModel
-	baseAttributes, err := parseBaseAttributes(object)
-	if err != nil {
-		slogger.Error(fmt.Sprintf("Error parsing base attributes: %s", err))
-	}
-	dataComponent.BaseAttributes = baseAttributes
-	if object["x_mitre_data_source_ref"] != nil {
-		dataComponent.XMitreDataSourceRef = object["x_mitre_data_source_ref"].(string)
-	}
-	if object["type"] != nil {
-		dataComponent.Type = object["type"].(string)
-	}
-	if object["x_mitre_attack_spec_version"] != nil {
-		dataComponent.XMitreAttackSpecVersion = object["x_mitre_attack_spec_version"].(string)
-	}
-	if object["x_mitre_modified_by_ref"] != nil {
-		dataComponent.XMitreModifiedByRef = object["x_mitre_modified_by_ref"].(string)
-	}
-	return dataComponent, nil
+	jsonString, _ := json.Marshal(object)
+	json.Unmarshal(jsonString, &dataComponent)
+	return &dataComponent, nil
 }
 
-func (d *DataComponentObject) Techniques() ([]Technique, error) {
-	return nil, nil
+func (a *DataComponentObject) SetRelationships(enterprise *Enterprise) error {
+	if enterprise.attackRelationshipMap[a.Id] != nil {
+		var techniques []*TechniqueObject
+		for _, techniqueId := range enterprise.attackRelationshipMap[a.Id] {
+			for _, technique := range enterprise.Techniques {
+				if technique.Id == techniqueId {
+					techniques = append(techniques, technique)
+				}
+			}
+		}
+		a.techniques = techniques
+	}
+	return nil
+}
+
+func (d DataComponentObject) Techniques() []*TechniqueObject {
+	return d.techniques
 }

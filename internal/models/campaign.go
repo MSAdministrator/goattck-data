@@ -1,7 +1,7 @@
 package models
 
 import (
-	"fmt"
+	"encoding/json"
 	"time"
 )
 
@@ -21,60 +21,61 @@ type CampaignObject struct {
 	XMitreFirstSeenCitation string    `json:"x_mitre_first_seen_citation"`
 	XMitreLastSeenCitation  string    `json:"x_mitre_last_seen_citation"`
 	XMitreContributors      []string  `json:"x_mitre_contributors,omitempty"`
+	malwares                []*MalwareObject
+	techniques              []*TechniqueObject
+	tools                   []*ToolObject
 }
 
-func NewCampaign(object map[string]interface{}) (CampaignObject, error) {
+func NewCampaign(object map[string]interface{}) (*CampaignObject, error) {
 	campaign := CampaignObject{}
-	baseModel, err := parseBaseModel(object)
-	if err != nil {
-		slogger.Error(fmt.Sprintf("Error parsing base model: %s", err))
-	}
-	campaign.BaseModel = baseModel
-	baseAttributes, err := parseBaseAttributes(object)
-	if err != nil {
-		slogger.Error(fmt.Sprintf("Error parsing base attributes: %s", err))
-	}
-	campaign.BaseAttributes = baseAttributes
-	baseExternalModel, err := parseExternalModel(object)
-	if err != nil {
-		slogger.Error(fmt.Sprintf("Error parsing external model: %s", err))
-	}
-	campaign.BaseExternalModel = baseExternalModel
-	if object["first_seen"] != nil {
-		firstSeen, err := time.Parse(time.RFC3339, object["first_seen"].(string))
-		if err != nil {
-			slogger.Error(fmt.Sprintf("Error parsing first_seen: %s", err))
+	jsonString, _ := json.Marshal(object)
+	json.Unmarshal(jsonString, &campaign)
+	return &campaign, nil
+}
+
+func (a *CampaignObject) SetRelationships(enterprise *Enterprise) error {
+	if enterprise.attackRelationshipMap[a.Id] != nil {
+		var malwares []*MalwareObject
+		for _, malwareId := range enterprise.attackRelationshipMap[a.Id] {
+			for _, malware := range enterprise.Malwares {
+				if malware.Id == malwareId {
+					malwares = append(malwares, malware)
+				}
+			}
 		}
-		campaign.FirstSeen = firstSeen
-	}
-	if object["last_seen"] != nil {
-		lastSeen, err := time.Parse(time.RFC3339, object["last_seen"].(string))
-		if err != nil {
-			slogger.Error(fmt.Sprintf("Error parsing last_seen: %s", err))
+		a.malwares = malwares
+
+		var techniques []*TechniqueObject
+		for _, techniqueId := range enterprise.attackRelationshipMap[a.Id] {
+			for _, technique := range enterprise.Techniques {
+				if technique.Id == techniqueId {
+					techniques = append(techniques, technique)
+				}
+			}
 		}
-		campaign.LastSeen = lastSeen
+		a.techniques = techniques
+
+		var tools []*ToolObject
+		for _, toolId := range enterprise.attackRelationshipMap[a.Id] {
+			for _, tool := range enterprise.Tools {
+				if tool.Id == toolId {
+					tools = append(tools, tool)
+				}
+			}
+		}
+		a.tools = tools
 	}
-	if object["x_mitre_first_seen_citation"] != nil {
-		campaign.XMitreFirstSeenCitation = object["x_mitre_first_seen_citation"].(string)
-	}
-	if object["x_mitre_last_seen_citation"] != nil {
-		campaign.XMitreLastSeenCitation = object["x_mitre_last_seen_citation"].(string)
-	}
-	if object["x_mitre_contributors"] != nil {
-		campaign.XMitreContributors = ConvertInterfaceArrayToStringArray(object["x_mitre_contributors"].([]interface{}))
-	}
-	return campaign, nil
+	return nil
 }
 
-
-func (c *CampaignObject) Malwares() ([]Malware, error) {
-	return nil, nil
+func (c CampaignObject) Malwares() []*MalwareObject {
+	return c.malwares
 }
 
-func (c *CampaignObject) Tools() ([]Tool, error) {
-	return nil, nil
+func (c CampaignObject) Techniques() []*TechniqueObject {
+	return c.techniques
 }
 
-func (c *CampaignObject) Techniques() ([]Technique, error) {
-	return nil, nil
+func (c CampaignObject) Tools() []*ToolObject {
+	return c.tools
 }

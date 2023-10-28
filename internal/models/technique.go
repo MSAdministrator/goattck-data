@@ -1,8 +1,6 @@
 package models
 
-import (
-	"fmt"
-)
+import "encoding/json"
 
 type Technique interface {
 	Actors() ([]Actor, error)
@@ -20,9 +18,9 @@ type TechniqueObject struct {
 	BaseModel
 	BaseAttributes
 	// These are properties from the MITRE ATT&CK json
-	XMitrePlatforms    []string `json:"x_mitre_platforms"`
+	XMitrePlatforms    []string            `json:"x_mitre_platforms"`
 	ExternalReferences []ExternalReference `json:"external_references"`
-	KillChainPhases []struct {
+	KillChainPhases    []struct {
 		KillChainName string `json:"kill_chain_name"`
 		PhaseName     string `json:"phase_name"`
 	} `json:"kill_chain_phases"`
@@ -40,169 +38,152 @@ type TechniqueObject struct {
 	XMitreEffectivePermissions []string `json:"x_mitre_effective_permissions,omitempty"`
 	XMitreNetworkRequirements  bool     `json:"x_mitre_network_requirements,omitempty"`
 	techniqueExternalAttributes
+	actors         []*ActorObject
+	campaigns      []*CampaignObject
+	dataComponents []*DataComponentObject
+	dataSources    []*DataSourceObject
+	malwares       []*MalwareObject
+	mitigations    []*MitigationObject
+	tactics        []*TacticObject
+	techniques     []*TechniqueObject
+	tools          []*ToolObject
 }
 
 type techniqueExternalAttributes struct {
 	// These are properties external from the MITRE ATT&CK json definitions
-	CommandList []string `json:"command_list"`
-	Commands []string `json:"commands"`
-	Queries []string `json:"queries"`
-	ParsedDatasets []string `json:"parsed_datasets"`
-	PossibleDetections []string`json:"possible_detections"`
-	ExternalReference []string `json:"external_reference"`
-	Controls []string `json:"controls"`
+	CommandList        []string `json:"command_list"`
+	Commands           []string `json:"commands"`
+	Queries            []string `json:"queries"`
+	ParsedDatasets     []string `json:"parsed_datasets"`
+	PossibleDetections []string `json:"possible_detections"`
+	ExternalReference  []string `json:"external_reference"`
+	Controls           []string `json:"controls"`
+	TechniqueId        string   `json:"technique_id"`
 }
 
-func parseTechniqueExternalAttributes(object map[string]interface{}) (techniqueExternalAttributes, error) {
-	techniqueExternalAttributes := techniqueExternalAttributes{}
-	if object["command_list"] != nil {
-		techniqueExternalAttributes.CommandList = ConvertInterfaceArrayToStringArray(object["command_list"].([]interface{}))
-	}
-	if object["commands"] != nil {
-		techniqueExternalAttributes.Commands = ConvertInterfaceArrayToStringArray(object["commands"].([]interface{}))
-	}
-	if object["queries"] != nil {
-		techniqueExternalAttributes.Queries = ConvertInterfaceArrayToStringArray(object["queries"].([]interface{}))
-	}
-	if object["parsed_datasets"] != nil {
-		techniqueExternalAttributes.ParsedDatasets = ConvertInterfaceArrayToStringArray(object["parsed_datasets"].([]interface{}))
-	}
-	if object["possible_detections"] != nil {
-		techniqueExternalAttributes.PossibleDetections = ConvertInterfaceArrayToStringArray(object["possible_detections"].([]interface{}))
-	}
-	if object["external_reference"] != nil {
-		techniqueExternalAttributes.ExternalReference = ConvertInterfaceArrayToStringArray(object["external_reference"].([]interface{}))
-	}
-	if object["controls"] != nil {
-		techniqueExternalAttributes.Controls = ConvertInterfaceArrayToStringArray(object["controls"].([]interface{}))
-	}
-	return techniqueExternalAttributes, nil
-}
-
-func parseKillChainPhases(object map[string]interface{}) []struct {
-	KillChainName string `json:"kill_chain_name"`
-	PhaseName     string `json:"phase_name"`
-} {
-	killChainPhases := []struct {
-		KillChainName string `json:"kill_chain_name"`
-		PhaseName     string `json:"phase_name"`
-	}{}
-	for _, killChainPhase := range object["kill_chain_phases"].([]interface{}) {
-		killChainPhases = append(killChainPhases, struct {
-			KillChainName string `json:"kill_chain_name"`
-			PhaseName     string `json:"phase_name"`
-		}{
-			KillChainName: killChainPhase.(map[string]interface{})["kill_chain_name"].(string),
-			PhaseName:     killChainPhase.(map[string]interface{})["phase_name"].(string),
-		})
-	}
-	return killChainPhases
-}
-
-func NewTechnique(object map[string]interface{}) (TechniqueObject, error) {
+func NewTechnique(object map[string]interface{}) (*TechniqueObject, error) {
 	technique := TechniqueObject{}
-	baseModel, err := parseBaseModel(object)
-	if err != nil {
-		slogger.Error(fmt.Sprintf("Error parsing base model: %s", err))
-	}
-	technique.BaseModel = baseModel
-	baseAttributes, err := parseBaseAttributes(object)
-	if err != nil {
-		slogger.Error(fmt.Sprintf("Error parsing base attributes: %s", err))
-	}
-	technique.BaseAttributes = baseAttributes
-	if object["x_mitre_platforms"] != nil {
-		technique.XMitrePlatforms = ConvertInterfaceArrayToStringArray(object["x_mitre_platforms"].([]interface{}))
-	}
-	if object["external_references"] != nil {
-		refs, err := parseExternalReferences(object)
-		if err != nil {
-			slogger.Error(fmt.Sprintf("Error parsing external references: %s", err))
+	jsonString, _ := json.Marshal(object)
+	json.Unmarshal(jsonString, &technique)
+	return &technique, nil
+}
+
+func (a *TechniqueObject) SetRelationships(enterprise *Enterprise) error {
+	if enterprise.attackRelationshipMap[a.Id] != nil {
+		var actors []*ActorObject
+		for _, actorId := range enterprise.attackRelationshipMap[a.Id] {
+			for _, actor := range enterprise.Actors {
+				if actor.Id == actorId {
+					actors = append(actors, actor)
+				}
+			}
 		}
-		technique.ExternalReferences = refs
+		a.actors = actors
+		var campaigns []*CampaignObject
+		for _, campaignId := range enterprise.attackRelationshipMap[a.Id] {
+			for _, campaign := range enterprise.Campaigns {
+				if campaign.Id == campaignId {
+					campaigns = append(campaigns, campaign)
+				}
+			}
+		}
+		a.campaigns = campaigns
+
+		var dataComponents []*DataComponentObject
+		for _, dataComponentId := range enterprise.attackRelationshipMap[a.Id] {
+			for _, dataComponent := range enterprise.DataComponents {
+				if dataComponent.Id == dataComponentId {
+					dataComponents = append(dataComponents, dataComponent)
+				}
+			}
+		}
+		a.dataComponents = dataComponents
+
+		var dataSources []*DataSourceObject
+		for _, dataSourceId := range enterprise.attackRelationshipMap[a.Id] {
+			for _, dataSource := range enterprise.DataSources {
+				if dataSource.Id == dataSourceId {
+					dataSources = append(dataSources, dataSource)
+				}
+			}
+		}
+		a.dataSources = dataSources
+
+		var malwares []*MalwareObject
+		for _, malwareId := range enterprise.attackRelationshipMap[a.Id] {
+			for _, malware := range enterprise.Malwares {
+				if malware.Id == malwareId {
+					malwares = append(malwares, malware)
+				}
+			}
+		}
+		a.malwares = malwares
+
+		var tactics []*TacticObject
+		for _, phase := range a.KillChainPhases {
+			for _, tactic := range enterprise.Tactics {
+				if tactic.XMitreShortname == phase.KillChainName {
+					tactics = append(tactics, tactic)
+				}
+			}
+		}
+		a.tactics = tactics
+
+		var techniques []*TechniqueObject
+		for _, techniqueId := range enterprise.attackRelationshipMap[a.Id] {
+			for _, technique := range enterprise.Techniques {
+				if technique.Id == techniqueId {
+					techniques = append(techniques, technique)
+				}
+			}
+		}
+		a.techniques = techniques
+
+		var tools []*ToolObject
+		for _, toolId := range enterprise.attackRelationshipMap[a.Id] {
+			for _, tool := range enterprise.Tools {
+				if tool.Id == toolId {
+					tools = append(tools, tool)
+				}
+			}
+		}
+		a.tools = tools
 	}
-	if object["kill_chain_phases"] != nil {
-		technique.KillChainPhases = parseKillChainPhases(object)
-	}
-	if object["x_mitre_detection"] != nil {
-		technique.XMitreDetection = object["x_mitre_detection"].(string)
-	}
-	if object["x_mitre_is_subtechnique"] != nil {
-		technique.XMitreIsSubtechnique = object["x_mitre_is_subtechnique"].(bool)
-	}
-	if object["x_mitre_modified_by_ref"] != nil {
-		technique.XMitreModifiedByRef = object["x_mitre_modified_by_ref"].(string)
-	}
-	if object["x_mitre_data_sources"] != nil {
-		technique.XMitreDataSources = ConvertInterfaceArrayToStringArray(object["x_mitre_data_sources"].([]interface{}))
-	}
-	if object["x_mitre_defense_bypassed"] != nil {
-		technique.XMitreDefenseBypassed = ConvertInterfaceArrayToStringArray(object["x_mitre_defense_bypassed"].([]interface{}))
-	}
-	if object["x_mitre_contributors"] != nil {
-		technique.XMitreContributors = ConvertInterfaceArrayToStringArray(object["x_mitre_contributors"].([]interface{}))
-	}
-	if object["x_mitre_permissions_required"] != nil {
-		technique.XMitrePermissionsRequired = ConvertInterfaceArrayToStringArray(object["x_mitre_permissions_required"].([]interface{}))
-	}
-	if object["x_mitre_remote_support"] != nil {
-		technique.XMitreRemoteSupport = object["x_mitre_remote_support"].(bool)
-	}
-	if object["x_mitre_attack_spec_version"] != nil {
-		technique.XMitreAttackSpecVersion = object["x_mitre_attack_spec_version"].(string)
-	}
-	if object["x_mitre_system_requirements"] != nil {
-		technique.XMitreSystemRequirements = ConvertInterfaceArrayToStringArray(object["x_mitre_system_requirements"].([]interface{}))
-	}
-	if object["x_mitre_impact_type"] != nil {
-		technique.XMitreImpactType = ConvertInterfaceArrayToStringArray(object["x_mitre_impact_type"].([]interface{}))
-	}
-	if object["x_mitre_effective_permissions"] != nil {
-		technique.XMitreEffectivePermissions = ConvertInterfaceArrayToStringArray(object["x_mitre_effective_permissions"].([]interface{}))
-	}
-	if object["x_mitre_network_requirements"] != nil {
-		technique.XMitreNetworkRequirements = object["x_mitre_network_requirements"].(bool)
-	}
-	techniqueExternalAttributes, err := parseTechniqueExternalAttributes(object)
-	if err != nil {
-		slogger.Error(fmt.Sprintf("Error parsing technique external attributes: %s", err))
-	}
-	technique.techniqueExternalAttributes = techniqueExternalAttributes
-	return technique, nil
+	return nil
 }
 
-func (t *TechniqueObject) Actors() ([]Actor, error) {
-	return nil, nil
+func (t TechniqueObject) Actors() []*ActorObject {
+	return t.actors
 }
 
-func (t *TechniqueObject) Campaigns() ([]Campaign, error) {
-	return nil, nil
+func (t TechniqueObject) Campaigns() []*CampaignObject {
+	return t.campaigns
 }
 
-func (t *TechniqueObject) DataComponents() ([]DataComponent, error) {
-	return nil, nil
+func (t TechniqueObject) DataComponents() []*DataComponentObject {
+	return t.dataComponents
 }
 
-func (t *TechniqueObject) DataSources() ([]DataSource, error) {
-	return nil, nil
+func (t TechniqueObject) DataSources() []*DataSourceObject {
+	return t.dataSources
 }
 
-func (t *TechniqueObject) Malwares() ([]Malware, error) {
-	return nil, nil
+func (t TechniqueObject) Malwares() []*MalwareObject {
+	return t.malwares
 }
 
-func (t *TechniqueObject) Mitigations() ([]Mitigation, error) {
-	return nil, nil
+func (t TechniqueObject) Mitigations() []*MitigationObject {
+	return t.mitigations
 }
 
-func (t *TechniqueObject) Tactics() ([]Tactic, error) {
-	return nil, nil
+func (t TechniqueObject) Tactics() []*TacticObject {
+	return t.tactics
 }
 
-func (t *TechniqueObject) Techniques() ([]Technique, error) {
-	return nil, nil
+func (t TechniqueObject) Techniques() []*TechniqueObject {
+	return t.techniques
 }
 
-func (t *TechniqueObject) Tools() ([]Tool, error) {
-	return nil, nil
+func (t TechniqueObject) Tools() []*ToolObject {
+	return t.tools
 }
